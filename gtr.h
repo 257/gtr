@@ -37,7 +37,7 @@
 
 // defs from cu.c
 #define TTS_URL_PREFIX "http://translate.google.com/translate_tts"
-#define SUG_URL_PREFIX "https://clients1.google.com/complete/search?ie=UTF-8&client=translate-web&ds=translate&hl=fr&jsonp=:&q="
+#define SUG_URL_PREFIX "https://clients1.google.com/complete/search?ie=UTF-8&oe=UTF-8&client=translate-web&ds=translate&hl=fr&jsonp=:&q="
 
 // TODO :these are default; add runtime equivalents to override
 #define FORM_LEN       7
@@ -175,12 +175,13 @@ json_object *mem2jobj(struct MemoryStruct *chunk)
 	json_object *ret_obj;
 	enum json_tokener_error jerry;
 
-	// debug("%s %s", __func__, chunk->memory);
+	// debug("%s %s", "chunk.mem", chunk->memory);
 	do {
 		ret_obj = json_tokener_parse_ex(tok, chunk->memory, chunk->size);
 	} while ((jerry = json_tokener_get_error(tok)) == json_tokener_continue);
 	if (jerry != json_tokener_success) {
 		debug("-- ERROR --: %s %s\n", __func__, json_tokener_error_desc(jerry));
+		debug("%s %s", "chunk.mem", chunk->memory);
 		// Handle errors, as appropriate for your application.
 	}
 	json_tokener_free(tok);
@@ -340,18 +341,21 @@ json_object * cu (int arc, char *argv[])
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	CURLcode res;
-	curl_easy_setopt(curl, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE, 1L);
-	curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
 	struct curl_slist *list = NULL;
 	list = curl_slist_append(list, "dnt: 1");
-	list = curl_slist_append(list, "accept-encoding: gzip, deflate, br");
-	list = curl_slist_append(list, "accept-language: en-GB,fr-FR;q=0.8,fr;q=0.6,fa-IR;q=0.4,fa;q=0.2,en-US;q=0.2,en;q=0.2");
+	list = curl_slist_append(list, "accept-language: en-GB,en;q=0.9,fr-FR;q=0.8,fr;q=0.7,en-US;q=0.6");
 	list = curl_slist_append(list, "accept */*");
 	list = curl_slist_append(list, "referer: https://translate.google.co.uk/");
 	list = curl_slist_append(list, "authority: clients1.google.com");
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
 	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip, deflate, br");
+	curl_easy_setopt(curl, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE, 1L);
+	curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+
+	// curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.62 Safari/537.36");
+	curl_easy_setopt(curl, CURLOPT_REFERER, "https://translate.google.co.uk/");
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
 
 	struct MemoryStruct chunk;
 	chunk.memory = malloc(1);
@@ -366,7 +370,7 @@ json_object * cu (int arc, char *argv[])
 				curl_easy_strerror(res));
 	} else {
 		chunk.memory += 2;
-		// debug("%s %s", "chunk.mem", chunk.memory);
+		debug("%s %s", "(chunk->memory)", chunk.memory);
 		goog_sez = mem2jobj(&chunk);
 		// json_object_put(goog_sez);
 	}

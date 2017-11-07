@@ -34,7 +34,6 @@ int main(int arc, char *argv[])
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(curl, CURLOPT_URL, GTR_URL_PREFIX);
 	CURLcode res;
-	curl_easy_setopt(curl, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE, 1L);
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
 	// curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 1L);
@@ -45,6 +44,8 @@ int main(int arc, char *argv[])
 	list = curl_slist_append(list, "Content-Type: application/json");
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, list);
 	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip, deflate, br");
+	curl_easy_setopt(curl, CURL_HTTP_VERSION_2_PRIOR_KNOWLEDGE, 1L);
+	curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
 
 	struct MemoryStruct chunk;
 
@@ -107,7 +108,7 @@ int main(int arc, char *argv[])
 
 			json_object_object_add(complete_items, "word", sug);
 			json_object_object_add(complete_items, "menu", sug_transed);
-			fprintf(stdout, "%s \n", json_object_to_json_string_ext(complete_items, JSON_C_TO_STRING_PRETTY));
+			fprintf(stdout, "%s\n", json_object_to_json_string_ext(complete_items, JSON_C_TO_STRING_PRETTY));
 			// fprintf(stdout, "%s:%s\n", json_object_get_string(sug), json_object_get_string(sug_transed));
 			// json_object_iter_next(&it);
 		}
