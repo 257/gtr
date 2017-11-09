@@ -71,7 +71,7 @@ int main(int arc, char *argv[])
 
 	res = curl_easy_perform(curl);
 	// Check for errors
-	json_object *complete_items = json_object_new_object();
+	json_object *matches = json_object_new_array();
 	if(res != CURLE_OK)
 		debug("curl_easy_perform() failed: %s", curl_easy_strerror(res));
 	else {
@@ -96,6 +96,7 @@ int main(int arc, char *argv[])
 
 		i = 0;
 		while (i < nsug) {
+			json_object *complete_items = json_object_new_object();
 			sug = json_object_array_get_idx(json_object_array_get_idx(sug_array, i), 0);
 			json_object *trans_pair = json_object_array_get_idx(translatedText_array, i++);
 			struct json_object_iterator transit = json_object_iter_begin(trans_pair);
@@ -106,16 +107,19 @@ int main(int arc, char *argv[])
 
 			json_object *sug_transed = json_object_iter_peek_value(&transit);
 
-			json_object_object_add(complete_items, "word", sug);
-			json_object_object_add(complete_items, "menu", sug_transed);
-			fprintf(stdout, "%s\n", json_object_to_json_string_ext(complete_items, JSON_C_TO_STRING_PRETTY));
+			json_object_object_add(complete_items, "word", json_object_get(sug));
+			json_object_object_add(complete_items, "menu", json_object_get(sug_transed));
+
+			json_object_array_add(matches, complete_items);
+
+			// fprintf(stdout, "%s\n", json_object_to_json_string_ext(complete_items, JSON_C_TO_STRING_PRETTY));
 			// fprintf(stdout, "%s:%s\n", json_object_get_string(sug), json_object_get_string(sug_transed));
 			// json_object_iter_next(&it);
 		}
 		// json_object_put(goog_sez);
 	}
 	// TODO: write to vim's socket here
-	// fprintf(stdout, "%s\n", json_object_to_json_string_ext(complete_items, JSON_C_TO_STRING_PRETTY));
+	fprintf(stdout, "%s", json_object_to_json_string_ext(matches, JSON_C_TO_STRING_PRETTY));
 	free(chunk.memory);
 
 	curl_slist_free_all(list);
@@ -123,9 +127,9 @@ int main(int arc, char *argv[])
 	curl_global_cleanup();
 	// debug("curl cleaned!");
 
-	json_object_put(call_back);
+	// json_object_put(call_back);
 
-	json_object_put(complete_items);
+	json_object_put(matches);
 
 	return 0;
 }
