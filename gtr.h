@@ -324,11 +324,11 @@ json_object * cu (int arc, char *argv[])
 {
 	// build your url string
 	char url[MAX_L+MAX_LEN_Q];
+	char q[MAX_LEN_Q];
 	sprintf(url, "%s", SUG_URL_PREFIX);
 	int i = 1;
 	while (i < arc)
-		strcat(url, argv[i++]);
-	debug("URL: %s", url);
+		strcat(q, argv[i++]);
 
 	json_object *goog_sez = NULL;
 	// get curl ready
@@ -336,10 +336,16 @@ json_object * cu (int arc, char *argv[])
 	if(!curl)
 		return goog_sez;
 
-	curl_easy_escape(curl, url, 0);
+	debug("Q: %s", q);
+	char *escaped_q = curl_easy_escape(curl, q, 0);
+	if(!escaped_q)
+		return NULL;
+	debug("ESCAPED_q: %s", escaped_q);
+	strcat(url, escaped_q);
+	debug("ESCAPED_URL: %s", url);
+	curl_easy_setopt(curl, CURLOPT_URL, url);
 
 	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-	curl_easy_setopt(curl, CURLOPT_URL, url);
 	CURLcode res;
 	curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 
@@ -364,6 +370,7 @@ json_object * cu (int arc, char *argv[])
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
 
 	res = curl_easy_perform(curl);
+	curl_free(escaped_q);
 	// Check for curl errors
 	if(res != CURLE_OK) {
 		fprintf(stderr, "curl_easy_perform() failed: %s",
